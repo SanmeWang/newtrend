@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>新流 — 目标与执行系统</title>
+<style>main.main{display:none}</style>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+
+<!-- ==================== 认证页 ==================== -->
+<div class="auth-page" id="auth-page">
+  <div class="auth-card">
+    <h1>新流</h1>
+    <p class="auth-subtitle">目标与执行系统</p>
+    <div class="auth-tabs">
+      <button class="auth-tab active" data-auth-tab="password">登录</button>
+      <button class="auth-tab" data-auth-tab="signup">注册</button>
+      <button class="auth-tab" data-auth-tab="otp">找回账号</button>
+    </div>
+    <div class="auth-msg" id="auth-message"></div>
+
+    <div class="auth-form" id="form-password">
+      <label>邮箱</label>
+      <input type="email" id="login-email" placeholder="请输入邮箱">
+      <label>密码</label>
+      <input type="password" id="login-password" placeholder="请输入密码">
+      <button class="btn" id="btn-login" style="width:100%;margin-top:4px;">登 录</button>
+    </div>
+
+    <div class="auth-form hidden" id="form-signup">
+      <label>邮箱</label>
+      <input type="email" id="signup-email" placeholder="请输入邮箱">
+      <label>密码</label>
+      <input type="password" id="signup-password" placeholder="请设置密码（至少6位）">
+      <label>确认密码</label>
+      <input type="password" id="signup-password2" placeholder="请再次输入密码">
+      <button class="btn" id="btn-signup" style="width:100%;margin-top:4px;">注 册</button>
+    </div>
+
+    <div class="auth-form hidden" id="form-otp">
+      <label>邮箱</label>
+      <input type="email" id="otp-email" placeholder="请输入注册邮箱">
+      <button class="btn" id="btn-otp" style="width:100%;margin-top:8px;">发送验证链接</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 主应用（登录后可见） ==================== -->
+<div id="app" class="hidden">
+
+  <!-- 导航栏 -->
+  <nav class="nav">
+    <div class="nav-inner">
+      <div class="nav-logo" data-page="goals">新流</div>
+      <div class="nav-tabs" id="nav-tabs">
+        <button class="nav-tab active" data-page="goals">目标</button>
+        <button class="nav-tab" data-page="daily">日排表</button>
+        <button class="nav-tab" data-page="content">内容</button>
+        <button class="nav-tab" data-page="pending">待定池</button>
+        <button class="nav-tab" data-page="progress">进度</button>
+        <button class="nav-tab" data-page="log">记录</button>
+      </div>
+      <div class="nav-user" id="nav-user">
+        <div class="nav-user-avatar" id="user-avatar-wrap">
+          <span id="user-avatar-text" style="display:none;"></span>
+        </div>
+        <span class="nav-user-name" id="user-name"></span>
+        <div class="user-dropdown hidden" id="user-dropdown">
+          <button class="user-dropdown-item" data-page="profile">个人中心</button>
+          <div class="user-dropdown-divider"></div>
+          <button class="user-dropdown-item danger" id="btn-logout">退出登录</button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ==================== 目标页 ==================== -->
+  <main class="main hidden" id="page-goals">
+    <div class="page-header">
+      <h1>目标</h1>
+      <p class="subtitle">写下目标，让行动有了方向。</p>
+    </div>
+
+    <div class="goal-section" id="section-short">
+      <div class="goal-section-header">
+        <span class="goal-section-title">短期<span>（1周~1月）</span></span>
+        <button class="btn btn-sm" data-action="addGoal" data-level="short">+ 添加</button>
+      </div>
+      <div class="goal-list" id="goals-short"></div>
+    </div>
+
+    <div class="goal-section" id="section-mid">
+      <div class="goal-section-header">
+        <span class="goal-section-title">中期<span>（1月~6月）</span></span>
+        <button class="btn btn-sm" data-action="addGoal" data-level="mid">+ 添加</button>
+      </div>
+      <div class="goal-list" id="goals-mid"></div>
+    </div>
+
+    <div class="goal-section" id="section-long">
+      <div class="goal-section-header">
+        <span class="goal-section-title">长期<span>（6月+）</span></span>
+        <button class="btn btn-sm" data-action="addGoal" data-level="long">+ 添加</button>
+      </div>
+      <div class="goal-list" id="goals-long"></div>
+    </div>
+
+    <div class="archived-section" id="section-archived">
+      <button class="archived-toggle" id="btn-toggle-archived">▸ 已完成 / 归档</button>
+      <div class="goal-list hidden" id="goals-archived"></div>
+    </div>
+  </main>
+
+  <!-- ==================== 日排表页 ==================== -->
+  <main class="main hidden" id="page-daily">
+    <div class="daily-layout">
+      <div class="status-panel" id="status-panel">
+        <div class="status-streak" id="status-streak">0</div>
+        <div class="status-text">
+          <div class="status-msg" id="status-msg">加载中…</div>
+          <div class="status-why hidden" id="status-why"></div>
+          <div class="status-energy hidden" id="status-energy"></div>
+        </div>
+      </div>
+
+      <div class="daily-datebar">
+        <button class="daily-date-nav" data-action="prevDay">←</button>
+        <span class="daily-date-text" id="daily-date"></span>
+        <button class="daily-date-nav" data-action="nextDay">→</button>
+      </div>
+
+      <div class="card">
+        <div class="energy-bar" id="energy-bar"></div>
+        <div class="energy-label" id="energy-label"></div>
+      </div>
+
+      <div class="card">
+        <h4 style="font-size:14px;font-weight:500;margin-bottom:12px;">活跃时段</h4>
+        <div class="shichen-grid" id="shichen-grid"></div>
+      </div>
+
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <h4 style="font-size:14px;font-weight:500;">今日任务</h4>
+          <button class="btn btn-sm" id="btn-add-task">+ 添加</button>
+        </div>
+        <div class="task-list" id="task-list"></div>
+      </div>
+
+      <div class="card">
+        <div class="monitoring-card-header">
+          <span class="monitoring-card-title">自我监控检查</span>
+          <button class="btn btn-sm btn-secondary" id="btn-edit-monitoring">编辑</button>
+        </div>
+        <div class="checklist-items" id="monitoring-checklist"></div>
+      </div>
+
+      <div class="card">
+        <h4 style="font-size:14px;font-weight:500;margin-bottom:8px;">今日反思</h4>
+        <textarea class="daily-textarea" id="daily-reflection" placeholder="今天做了什么，学到了什么…"></textarea>
+      </div>
+
+      <div class="card">
+        <h4 style="font-size:14px;font-weight:500;margin-bottom:8px;">笔记</h4>
+        <textarea class="daily-textarea" id="daily-notes" placeholder="随意记录…"></textarea>
+      </div>
+    </div>
+  </main>
+
+  <!-- ==================== 内容页 ==================== -->
+  <main class="main hidden" id="page-content">
+    <div class="page-header">
+      <h1>内容</h1>
+      <p class="subtitle">记录每一个创作，追踪每一个产出。</p>
+    </div>
+    <div class="content-filters">
+      <select id="content-filter-l1"><option value="">全部类型</option></select>
+      <select id="content-filter-l2"><option value="">全部方向</option></select>
+      <select id="content-filter-l3"><option value="">全部子类</option></select>
+      <select id="content-filter-status">
+        <option value="">全部状态</option>
+        <option value="已发布">已发布</option>
+        <option value="制作中">制作中</option>
+        <option value="草稿">草稿</option>
+        <option value="想法">想法</option>
+      </select>
+      <button class="btn btn-sm" data-action="addContent">+ 新内容</button>
+    </div>
+    <div class="content-grid" id="content-list"></div>
+  </main>
+
+  <!-- ==================== 待定池页 ==================== -->
+  <main class="main hidden" id="page-pending">
+    <div class="page-header">
+      <h1>待定池</h1>
+      <p class="subtitle">想法先丢进来，好想法会在池子里渐渐清晰。</p>
+    </div>
+    <div class="pending-stats" id="pending-stats"></div>
+    <p class="pending-rules">规则：一周内激活为短期目标，否则视为坏想法沉底（可手动删除）。</p>
+    <button class="btn btn-sm" data-action="addPending" style="margin-bottom:16px;">+ 添加想法</button>
+    <div class="pending-list" id="pending-list"></div>
+  </main>
+
+  <!-- ==================== 进度页 ==================== -->
+  <main class="main hidden" id="page-progress">
+    <div class="page-header">
+      <h1>进度</h1>
+      <p class="subtitle">数据不说谎，看到自己的节奏。</p>
+    </div>
+    <div class="progress-grid">
+      <div class="progress-card">
+        <h3>目标进度</h3>
+        <div id="progress-overview"></div>
+      </div>
+      <div class="progress-card">
+        <h3>活跃时段分布</h3>
+        <div id="shichen-chart"></div>
+      </div>
+      <div class="progress-card">
+        <h3>任务标签分布</h3>
+        <div id="label-stats-container"></div>
+      </div>
+      <div class="progress-card">
+        <h3>精力趋势（近14天）</h3>
+        <div id="energy-chart"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ==================== 记录页 ==================== -->
+  <main class="main hidden" id="page-log">
+    <div class="page-header">
+      <h1>记录</h1>
+      <p class="subtitle">真实地记，不美化，不遮掩。</p>
+    </div>
+    <div class="log-timeline" id="log-timeline"></div>
+    <div style="margin-top:24px;display:flex;gap:12px;">
+      <button class="btn btn-secondary" data-action="exportData">导出数据</button>
+      <button class="btn btn-secondary" data-action="importData">导入数据</button>
+      <button class="btn btn-danger" data-action="showClearDialog" style="margin-left:auto;">清空记录</button>
+      <input type="file" id="import-file" style="display:none" accept=".json">
+    </div>
+  </main>
+
+  <!-- ==================== 个人中心 ==================== -->
+  <main class="main hidden" id="page-profile">
+    <div class="page-header">
+      <h1>个人中心</h1>
+      <p class="subtitle">管理账户信息。</p>
+    </div>
+    <div class="profile-card">
+      <h3>头像</h3>
+      <div class="avatar-section">
+        <div class="avatar-preview-wrap">
+          <div class="avatar-preview" id="avatar-preview"></div>
+          <p class="avatar-preview-label">当前头像</p>
+        </div>
+        <div class="avatar-options">
+          <p class="avatar-section-label">卡通头像</p>
+          <div class="cartoon-avatar-grid" id="cartoon-avatar-grid"></div>
+          <p class="avatar-section-label" style="margin-top:12px;">自定义头像</p>
+          <div class="row">
+            <input type="file" id="avatar-upload" accept="image/*" style="display:none;">
+            <button class="btn btn-sm" id="btn-avatar-upload">上传图片</button>
+            <span class="avatar-file-name" id="avatar-file-name"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="profile-card">
+      <h3>昵称</h3>
+      <div class="row">
+        <input type="text" id="profile-nickname" placeholder="设置昵称">
+        <button class="btn btn-sm" id="btn-update-nickname">保存</button>
+      </div>
+    </div>
+    <div class="profile-card">
+      <h3>修改邮箱</h3>
+      <div class="row">
+        <input type="email" id="profile-email" placeholder="新邮箱地址">
+        <button class="btn btn-sm" id="btn-update-email">保存</button>
+      </div>
+    </div>
+    <div class="profile-card">
+      <h3>修改密码</h3>
+      <div class="row">
+        <input type="password" id="profile-new-password" placeholder="新密码（至少6位）">
+        <button class="btn btn-sm" id="btn-update-password">保存</button>
+      </div>
+    </div>
+    <div class="profile-card">
+      <h3>反馈与建议</h3>
+      <textarea class="feedback-textarea" id="feedback-content" placeholder="你的建议、想法或遇到的问题…"></textarea>
+      <button class="btn btn-sm" id="btn-send-feedback">发送反馈</button>
+    </div>
+    <div class="profile-card danger-card">
+      <h3 style="color:var(--danger);">账号注销</h3>
+      <p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px;">注销后所有数据将被永久删除，不可恢复。</p>
+      <button class="btn btn-sm btn-danger" id="btn-delete-account">注销账号</button>
+    </div>
+  </main>
+
+  <!-- ==================== 弹窗：目标编辑 ==================== -->
+  <div class="modal hidden" id="modal-goal">
+    <div class="modal-inner">
+      <h3 id="modal-goal-title">添加目标</h3>
+      <input type="hidden" id="edit-id">
+      <label>目标内容</label>
+      <textarea id="goal-content" placeholder="写下你的目标…" rows="3"></textarea>
+      <label>优先级</label>
+      <select id="goal-priority">
+        <option value="high">高</option>
+        <option value="mid" selected>中</option>
+        <option value="low">低</option>
+      </select>
+      <label>进度（<span id="progress-val">0%</span>）</label>
+      <input type="range" id="goal-progress" min="0" max="100" value="0">
+      <label>关联上层目标</label>
+      <select id="goal-parent"><option value="">无</option></select>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" data-action="closeModal" data-modal="modal-goal">取消</button>
+        <button class="btn btn-danger btn-sm hidden" id="btn-delete-goal">删除</button>
+        <button class="btn" id="btn-save-goal">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 弹窗：内容编辑 ==================== -->
+  <div class="modal hidden" id="modal-content">
+    <div class="modal-inner">
+      <h3 id="modal-content-title">添加内容</h3>
+      <input type="hidden" id="content-edit-id">
+      <label>标题</label>
+      <input type="text" id="content-title" placeholder="内容标题">
+      <label>分类</label>
+      <select id="content-cat-l1"><option value="">选择一级分类</option></select>
+      <select id="content-cat-l2" class="hidden"><option value="">选择二级分类</option></select>
+      <select id="content-cat-l3" class="hidden"><option value="">选择三级分类</option></select>
+      <label>状态</label>
+      <select id="content-status">
+        <option value="想法">想法</option>
+        <option value="草稿">草稿</option>
+        <option value="制作中">制作中</option>
+        <option value="已发布">已发布</option>
+      </select>
+      <label>发布平台</label>
+      <input type="text" id="content-platform" placeholder="如：公众号、B站…">
+      <label>计划日期</label>
+      <input type="date" id="content-date">
+      <label>备注 / 链接</label>
+      <input type="text" id="content-note" placeholder="备注或链接">
+      <label>关联目标</label>
+      <select id="content-goal"><option value="">不关联</option></select>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" data-action="closeModal" data-modal="modal-content">取消</button>
+        <button class="btn btn-danger btn-sm hidden" id="btn-delete-content">删除</button>
+        <button class="btn" id="btn-save-content">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 弹窗：待定池添加 ==================== -->
+  <div class="modal hidden" id="modal-pending">
+    <div class="modal-inner">
+      <h3>添加待定想法</h3>
+      <label>想法内容</label>
+      <textarea id="pending-content" placeholder="写下你的想法…" rows="3"></textarea>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" data-action="closeModal" data-modal="modal-pending">取消</button>
+        <button class="btn" id="btn-save-pending">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 弹窗：分类管理 ==================== -->
+  <div class="modal hidden" id="modal-categories">
+    <div class="modal-inner">
+      <h3>管理分类</h3>
+      <div class="cat-tree" id="cat-tree"></div>
+      <div class="cat-add-row">
+        <input type="text" id="cat-add-name" placeholder="新分类名称">
+        <select id="cat-add-parent"><option value="">一级分类</option></select>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-sm btn-secondary" id="btn-cat-add">+ 添加分类</button>
+        <button class="btn btn-secondary" data-action="closeModal" data-modal="modal-categories">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 弹窗：监控项编辑 ==================== -->
+  <div class="modal hidden" id="modal-monitoring">
+    <div class="modal-inner">
+      <h3>编辑监控检查项</h3>
+      <div id="monitoring-edit-list"></div>
+      <button class="btn btn-sm" id="btn-add-monitoring-item" style="margin-top:10px;">+ 添加检查项</button>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" data-action="closeModal" data-modal="modal-monitoring">取消</button>
+        <button class="btn" id="btn-save-monitoring">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 弹窗：清空数据 ==================== -->
+  <div class="modal hidden" id="modal-clear">
+    <div class="modal-inner">
+      <h3>清空数据</h3>
+      <p style="font-size:13px;color:var(--text-secondary);margin-bottom:14px;">选择要清空的表（可多选），未勾选的保持不变。</p>
+      <div class="clear-table-list" id="clear-table-list">
+        <label class="clear-table-item clear-table-all"><input type="checkbox" id="clear-check-all"><span>全选</span></label>
+        <label class="clear-table-item"><input type="checkbox" class="clear-check" value="goals"><span>目标</span></label>
+        <label class="clear-table-item"><input type="checkbox" class="clear-check" value="dailies"><span>日排表</span></label>
+        <label class="clear-table-item"><input type="checkbox" class="clear-check" value="contents"><span>内容</span></label>
+        <label class="clear-table-item"><input type="checkbox" class="clear-check" value="pending_pool"><span>待定池</span></label>
+        <label class="clear-table-item"><input type="checkbox" class="clear-check" value="energy_logs"><span>精力记录</span></label>
+        <label class="clear-table-item"><input type="checkbox" class="clear-check" value="logs"><span>日志记录</span></label>
+        <label class="clear-table-item"><input type="checkbox" class="clear-check" value="categories"><span>分类（类型/方向）</span></label>
+      </div>
+      <p style="font-size:12px;color:var(--danger);margin-top:12px;">清空后无法恢复，建议先导出备份。</p>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" data-action="closeModal" data-modal="modal-clear">取消</button>
+        <button class="btn btn-danger" id="btn-clear-confirm">确定清空</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 弹窗：账号注销确认 ==================== -->
+  <div class="modal hidden" id="modal-delete-account">
+    <div class="modal-inner">
+      <h3>确认注销账号</h3>
+      <p style="font-size:14px;color:var(--text-secondary);line-height:1.6;">
+        注销后你的所有数据将被永久删除，包括：<br>
+        目标、日排表、内容、待定池、精力记录、日志记录。<br>
+        分类和个人资料也会一并清除。
+      </p>
+      <p style="font-size:13px;color:var(--danger);margin-top:10px;">此操作不可撤销。</p>
+      <div class="delete-confirm-actions">
+        <button class="btn btn-secondary" data-action="closeModal" data-modal="modal-delete-account">取消</button>
+        <button class="btn btn-danger" id="btn-confirm-delete">确认注销</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 弹窗：注销反馈 ==================== -->
+  <div class="modal hidden" id="modal-delete-feedback">
+    <div class="modal-inner">
+      <h3>在你离开之前…</h3>
+      <p style="font-size:13px;color:var(--text-secondary);margin-bottom:14px;">如果你愿意，可以告诉我们为什么离开，帮助我们改进。</p>
+      <textarea class="feedback-textarea" id="delete-feedback-content" placeholder="（可选）你的建议或离开原因…"></textarea>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="btn-skip-and-delete">跳过</button>
+        <button class="btn" id="btn-send-and-delete">发送建议并注销</button>
+      </div>
+      <p class="feedback-skip">反馈完全可选，不填也能注销。</p>
+    </div>
+  </div>
+
+  <footer class="site-footer">Copyright &copy; 2026 Chqean Inc All Rights Reserved. 炽余公司 版权所有</footer>
+</div><!-- /#app -->
+
+<script src="app-supabase.js"></script>
+</body>
+</html>
